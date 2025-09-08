@@ -1,6 +1,8 @@
 # python-google-search-rank
 
-A simple Python script to find the Google search rank of a given website domain for a specific search term.
+A simple Python script that checks the Google search ranking of a given domain for a specific keyword or phrase.
+<br><br>
+It uses [Custom Search API](https://developers.google.com/custom-search/v1) from Google to perform the search and fetch the results.
 
 ## 📋 Prerequisites
 

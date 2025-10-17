@@ -1,12 +1,23 @@
 # python-google-search-rank
 
-A simple Python script that checks the Google search ranking of a given domain for a specific keyword or phrase.
-<br><br>
-It uses the [Custom Search API](https://developers.google.com/custom-search/v1) from Google to perform the search and fetch the results.
+A simple Python script that checks the `Google Search Ranking` of a given domain for a specific keyword or phrase.
+
+It supports the following Search APIs:
+
+- [SerpApi](https://serpapi.com) (Default)
+- [Google Custom Search API](https://developers.google.com/custom-search/v1)
 
 ## 📋 Prerequisites
 
-1. A Google Custom Search `API Key` and `Engine ID` (both can be created [here](https://developers.google.com/custom-search/v1/introduction))
+Depending on which Search API you choose, you’ll need one of the following:
+
+### Option 1: SerpApi
+
+- A SerpApi `API Key` is required (can be created [here](https://serpapi.com))
+
+### Option 2: Google Custom Search API
+
+- A Google Custom Search `API Key` and `Engine ID` is required (both can be created [here](https://developers.google.com/custom-search/v1/introduction))
 
 ## 📦 Installation
 
@@ -23,11 +34,15 @@ It uses the [Custom Search API](https://developers.google.com/custom-search/v1) 
    pip install -r requirements.txt
    ```
 
-3. Set up your environment variables:
+3. Set up your environment variables based on the Search API you plan to use:
 
    ```bash
-   export GOOGLE_CUSTOM_SEARCH_API_KEY="your_api_key"
-   export GOOGLE_CUSTOM_SEARCH_ENGINE_ID="your_engine_id"
+   # For SerpApi
+   export SERPAPI_API_KEY="your-serpapi-api-key"
+
+   # For Google Custom Search API
+   export GOOGLE_CUSTOM_SEARCH_API_KEY="your-google-custom-search-api-key"
+   export GOOGLE_CUSTOM_SEARCH_ENGINE_ID="your-google-custom-search-engine-id"
    ```
 
 ## ▶️ Usage
@@ -55,11 +70,17 @@ python google-rank-finder.py <website_domain> <search_term> --country AU
 python google-rank-finder.py <website_domain> <search_term> --max_pages 3
 ```
 
+`--api`: Choose the Search API to use (`SERPAPI` or `GOOGLE_CUSTOM_SEARCH`). Default is `SERPAPI`.
+
+```bash
+python google-rank-finder.py <website_domain> <search_term> --api GOOGLE_CUSTOM_SEARCH
+```
+
 ## 📂 Example Output
 
 ```text
 python google-rank-finder.py "instagram.com" "ig"
-Google Search Rank:
+Google Search Rank (via. SERPAPI):
 page: 1, rank: 1, url: https://www.instagram.com/
 ```
 

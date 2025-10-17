@@ -11,42 +11,32 @@ RESULTS_PER_PAGE = 10
 DEFAULT_TIMEOUT = 20
 
 def find_google_search_rank(query, domain, country, max_pages):
-    """
-    Returns {"page": int, "rank": int, "url": str} if found; otherwise None.
-    """
-    # SerpAPI uses 0-based 'start' offsets: 0, 10, 20...
-    for page_idx in range(max_pages):
-        start = page_idx * RESULTS_PER_PAGE
-
+    for page in range(max_pages):
+        start = page * RESULTS_PER_PAGE
         params = {
+            "api_key": SERPAPI_API_KEY,
             "engine": "google",
             "q": query,
-            "api_key": SERPAPI_API_KEY,
+            "gl": country.lower(),
             "num": RESULTS_PER_PAGE,
             "start": start,
-            "gl": country.lower() if country else None,
+            "safe": "off",
         }
 
-        # Remove None values so the request is clean
-        params = {k: v for k, v in params.items() if v is not None}
+        response = requests.get(SERPAPI_URL, params=params, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        data = response.json()
 
-        resp = requests.get(SERPAPI_URL, params=params, timeout=DEFAULT_TIMEOUT)
-        resp.raise_for_status()
-        data = resp.json()
+        items = data.get("organic_results", []) or []
 
-        organic = data.get("organic_results", []) or []
-
-        # If no organic results are returned for this page, stop early
-        if not organic:
+        if not items:
             return None
 
-        # SerpAPI's items have 'link' and often 'position' (absolute overall rank)
-        for i, item in enumerate(organic, start=1):
-            link = item.get("link", "") or ""
+        for i, item in enumerate(items, start=1):
+            link = item.get("link", "")
             if domain.lower() in link.lower():
-                # overall rank = (results before this page) + in-page index
                 overall_rank = start + i
-                page_number = page_idx + 1
+                page_number = page + 1
                 return {"page": page_number, "rank": overall_rank, "url": link}
 
     return None
@@ -56,16 +46,16 @@ if __name__ == "__main__":
         raise ValueError("ERROR: SERPAPI_API_KEY environment variable not set.")
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("domain", help="Domain substring to match (e.g., example.com)")
-    parser.add_argument("query", help="Google query")
-    parser.add_argument("--country", default=DEFAULT_COUNTRY, help="ISO country code like 'au', 'us'")
+    parser.add_argument("domain")
+    parser.add_argument("query")
+    parser.add_argument("--country", default=DEFAULT_COUNTRY)
     parser.add_argument("--max_pages", type=int, default=DEFAULT_MAX_PAGES)
     args = parser.parse_args()
 
-    res = find_google_search_rank(args.query, args.domain, args.country, args.max_pages)
+    result = find_google_search_rank(args.query, args.domain, args.country, args.max_pages)
 
-    if res:
-        print("Google Search Rank (SerpAPI):")
-        print(f"page: {res['page']}, rank: {res['rank']}, url: {res['url']}")
+    if result:
+        print("Google Search Rank (via. SerpAPI):")
+        print(f"page: {result['page']}, rank: {result['rank']}, url: {result['url']}")
     else:
         print(f"No result for {args.domain} found within first {args.max_pages} pages.")

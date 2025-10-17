@@ -56,10 +56,10 @@ if __name__ == "__main__":
     parser.add_argument("--max_pages", type=int, default=DEFAULT_MAX_PAGES)
     args = parser.parse_args()
 
-    res = find_google_search_rank(args.query, args.domain, args.country, args.max_pages)
+    result = find_google_search_rank(args.query, args.domain, args.country, args.max_pages)
 
-    if res:
-        print("Google Search Rank:")
-        print(f"page: {res['page']}, rank: {res['rank']}, url: {res['url']}")
+    if result:
+        print("Google Search Rank (via. Google Custom Search API):")
+        print(f"page: {result['page']}, rank: {result['rank']}, url: {result['url']}")
     else:
         print(f"No result for {args.domain} found within first {args.max_pages} pages.")

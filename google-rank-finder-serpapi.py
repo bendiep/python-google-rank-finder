@@ -24,12 +24,7 @@ def find_google_search_rank(query, domain, country, max_pages):
             "api_key": SERPAPI_API_KEY,
             "num": RESULTS_PER_PAGE,
             "start": start,
-            # Localization: 'gl' for country; 'hl' for UI language (optional).
-            # You can also specify google_domain (e.g., google.com.au) if you want.
             "gl": country.lower() if country else None,
-            # "google_domain": "google.com.au" if country.lower() == "au" else "google.com",
-            # "hl": "en",
-            # SafeSearch isn't a direct flag in SerpAPI like CSE; omit or use 'safe=active' via tbs if needed.
         }
 
         # Remove None values so the request is clean

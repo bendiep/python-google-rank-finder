@@ -22,19 +22,6 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-<details>
-<summary>Windows PowerShell</summary>
-
-```powershell
-git clone https://github.com/bendiep/python-google-rank-finder.git
-cd python-google-rank-finder
-py -3 -m venv .venv
-.venv\Scripts\Activate.ps1
-python -m pip install -r requirements.txt
-```
-
-</details>
-
 ### 2. Run your first check
 
 Start with the guided setup:
@@ -54,7 +41,6 @@ export SERPAPI_API_KEY="your-serpapi-api-key"
 python google-rank-finder.py example.com "example keyword"
 ```
 
-In PowerShell, set the key with `$env:SERPAPI_API_KEY = "your-serpapi-api-key"`.
 You can also use `python -m rank_finder` in place of `python google-rank-finder.py`.
 
 By default, a check uses US, English, desktop and a maximum depth of 100 organic

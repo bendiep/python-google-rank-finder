@@ -9,9 +9,12 @@ import sqlite3
 import sys
 from dataclasses import replace
 
-from .core import SearchConfig, find_rank, normalize_domain, validate_transport
+from .core import DEFAULT_COUNTRY, SearchConfig, find_rank, normalize_domain, validate_transport
 from .history import save_result
 from .serpapi import SerpApiClient
+from .terminal import banner, format_result, section, style
+
+COUNTRY_CODES_URL = "https://serpapi.com/google-countries"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -22,7 +25,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("domain", help="Domain or URL, for example example.com")
     parser.add_argument("query", help="Search keyword or phrase")
     parser.add_argument(
-        "--country", default="us", help="Two-letter search country code; default us"
+        "--country",
+        default=DEFAULT_COUNTRY,
+        help=f"Two-letter search country code; default AU. Country codes: {COUNTRY_CODES_URL}",
     )
     parser.add_argument(
         "--location",
@@ -76,18 +81,22 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _prompt(label: str, default: str = "", validate=None) -> str:
+def _prompt(label: str, default: str = "", validate=None, *, hint: str = "") -> str:
+    question = "  " + style(label, "1", stream=sys.stderr)
+    if default:
+        question += style(f" [{default}]", "36", stream=sys.stderr)
+    print("\n" + question, file=sys.stderr)
+    if hint:
+        print(style("    " + hint, "2", stream=sys.stderr), file=sys.stderr)
     while True:
-        print(
-            label + (f" [{default}]" if default else "") + ": ", end="", file=sys.stderr, flush=True
-        )
+        print(style("  > ", "36", stream=sys.stderr), end="", file=sys.stderr, flush=True)
         value = input().strip() or default
         try:
             if validate:
                 validate(value)
             return value
         except ValueError as exc:
-            print(str(exc), file=sys.stderr)
+            print(style("    ! " + str(exc), "31", stream=sys.stderr), file=sys.stderr)
 
 
 def _choice(*options):
@@ -100,10 +109,16 @@ def _choice(*options):
 
 def interactive_config() -> tuple[SearchConfig, str, bool, str | None]:
     print(
-        "Google organic rank checker\nPress Enter to accept a default. Press Ctrl+C to cancel.\n",
+        banner("Guided setup", stream=sys.stderr),
         file=sys.stderr,
     )
-    domain = _prompt("Website domain or URL", validate=normalize_domain)
+    print(
+        style("  Enter accepts a default. Ctrl+C cancels.", "2", stream=sys.stderr), file=sys.stderr
+    )
+    print(section("Search terms", stream=sys.stderr), file=sys.stderr)
+    domain = _prompt(
+        "Website", validate=normalize_domain, hint="Enter a domain or URL, for example example.com."
+    )
 
     def validate_query(value):
         if not value:
@@ -111,17 +126,27 @@ def interactive_config() -> tuple[SearchConfig, str, bool, str | None]:
 
     query = _prompt("Keyword or phrase", validate=validate_query)
     config = SearchConfig(domain, query)
+    print(section("Search settings", stream=sys.stderr), file=sys.stderr)
     country = _prompt(
-        "Country code, for example AU or US",
-        config.country,
+        "Country code",
+        config.country.upper(),
         lambda value: replace(config, country=value),
+        hint=f"AU = Australia. Country codes: {COUNTRY_CODES_URL}",
     )
     language = _prompt(
-        "Language code", config.language, lambda value: replace(config, language=value)
+        "Language",
+        config.language,
+        lambda value: replace(config, language=value),
+        hint="Use a language code, such as en for English.",
     )
-    location = _prompt("City or region, optional; blank lets SerpApi choose the location")
+    location = _prompt(
+        "City or region", hint="Optional. For example Melbourne, Victoria, Australia."
+    )
     device = _prompt(
-        "Device: desktop, mobile or tablet", config.device, _choice("desktop", "mobile", "tablet")
+        "Device",
+        config.device,
+        _choice("desktop", "mobile", "tablet"),
+        hint="desktop / mobile / tablet",
     ).lower()
 
     def validate_depth(value):
@@ -130,24 +155,50 @@ def interactive_config() -> tuple[SearchConfig, str, bool, str | None]:
         except ValueError:
             raise ValueError("Enter a whole number between 1 and 1000.") from None
 
-    depth = int(_prompt("Highest organic position to check", "100", validate_depth))
+    depth = int(
+        _prompt(
+            "Search depth",
+            "100",
+            validate_depth,
+            hint="Highest organic position to check, between 1 and 1000.",
+        )
+    )
     include_subdomains = _prompt(
-        "Include subdomains? yes/no", "yes", _choice("yes", "no", "y", "n")
+        "Include subdomains?",
+        "yes",
+        _choice("yes", "no", "y", "n"),
+        hint="Includes www and other subdomains. Choose yes or no.",
     ).lower() in ("yes", "y")
     fresh = _prompt(
-        "Bypass the cached results? yes/no", "no", _choice("yes", "no", "y", "n")
+        "Fetch fresh results?",
+        "no",
+        _choice("yes", "no", "y", "n"),
+        hint="Skip cached results. This can use more search credits.",
     ).lower() in ("yes", "y")
+    print(section("Output", stream=sys.stderr), file=sys.stderr)
     json_output = (
-        _prompt("Output format: text or json", "text", _choice("text", "json")).lower() == "json"
+        _prompt("Output format", "text", _choice("text", "json"), hint="text / json").lower()
+        == "json"
     )
-    history = _prompt("SQLite history file, optional; blank skips saving") or None
+    history = (
+        _prompt("History file", hint="Optional SQLite file, such as ranks.sqlite3. Enter to skip.")
+        or None
+    )
     api_key = os.getenv("SERPAPI_API_KEY", "").strip()
     if not api_key:
-        print("Get a SerpApi API key at https://serpapi.com/manage-api-key", file=sys.stderr)
+        print(section("API key", stream=sys.stderr), file=sys.stderr)
+        print(
+            style("  Get a key: https://serpapi.com/manage-api-key", "2", stream=sys.stderr),
+            file=sys.stderr,
+        )
+        print(
+            style("  Hidden while typing; used for this run only.\n", "2", stream=sys.stderr),
+            file=sys.stderr,
+        )
     while not api_key:
-        api_key = getpass.getpass("SerpApi API key, hidden and used for this run only: ").strip()
+        api_key = getpass.getpass(style("  API key: ", "1", stream=sys.stderr)).strip()
         if not api_key:
-            print("An API key is required.", file=sys.stderr)
+            print(style("  ! An API key is required.", "31", stream=sys.stderr), file=sys.stderr)
     config = replace(
         config,
         country=country,
@@ -159,51 +210,17 @@ def interactive_config() -> tuple[SearchConfig, str, bool, str | None]:
         include_subdomains=include_subdomains,
         fresh=fresh,
     )
+    print(section("Starting search", stream=sys.stderr), file=sys.stderr)
+    print(f"  Top {depth} positions / up to {config.max_pages} pages", file=sys.stderr)
     print(
-        f"\nChecking up to position {depth}, with at most {config.max_pages} pages and {config.max_pages * 2} HTTP requests including retries.",
+        style(
+            f"  At most {config.max_pages * 2} HTTP requests including retries.\n",
+            "2",
+            stream=sys.stderr,
+        ),
         file=sys.stderr,
     )
     return config, api_key, json_output, history
-
-
-def format_result(result) -> str:
-    config = result.config
-    lines = ["Google organic position via SerpApi"]
-    if result.status == "found":
-        lines.append(f"Position: {result.rank} | Page fetched: {result.page} | URL: {result.url}")
-    elif result.status == "not_found":
-        lines.append(f"No matching result for {config.domain} in the positions checked.")
-    elif result.status == "incomplete":
-        lines.append("Search incomplete. The full requested depth was not checked.")
-    else:
-        lines.append("Search failed. No ranking conclusion is available.")
-    if result.error:
-        lines.append("Error: " + result.error)
-    lines.append(f'Keyword: "{config.query}" | Domain: {config.domain}')
-    lines.append(
-        f"Country: {config.country.upper()} | Language: {config.language} | Device: {config.device}"
-    )
-    lines.append("Requested location: " + (config.location or "provider-selected"))
-    locations = list(
-        dict.fromkeys(
-            item["location_used"] for item in result.searches if item.get("location_used")
-        )
-    )
-    if locations:
-        lines.append("Location used: " + "; ".join(locations))
-    for observation in result.searches:
-        displayed = observation.get("query_displayed")
-        if displayed and displayed != config.query:
-            lines.append(f'Google displayed the query as: "{displayed}"')
-            break
-    lines.append(
-        f"Checked {result.results_checked} organic results across {result.pages_checked} pages; deepest position checked: {result.deepest_rank_checked}."
-    )
-    lines.append(f"HTTP requests: {result.requests_made} | Stop reason: {result.stop_reason}")
-    lines.append(
-        f"Retrieved at: {result.checked_at} | Cache: {'bypassed' if config.fresh else 'allowed'}"
-    )
-    return "\n".join(lines)
 
 
 def main(argv=None) -> int:

@@ -7,6 +7,8 @@ from datetime import datetime, timezone
 from typing import Protocol
 from urllib.parse import urlsplit
 
+DEFAULT_COUNTRY = "au"
+
 
 def normalize_domain(value: str) -> str:
     """Accept a hostname or HTTP URL, retaining an explicitly supplied www prefix."""
@@ -48,7 +50,7 @@ def matches_domain(url: str, domain: str, include_subdomains: bool = True) -> bo
 class SearchConfig:
     domain: str
     query: str
-    country: str = "us"
+    country: str = DEFAULT_COUNTRY
     language: str = "en"
     location: str | None = None
     device: str = "desktop"

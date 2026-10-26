@@ -15,10 +15,18 @@ Press Enter to accept a default or Ctrl+C to cancel. You can correct invalid
 entries at the prompt. Setup uses `SERPAPI_API_KEY` if set. Otherwise, it prompts
 privately for a key, uses it for the current run and does not save it.
 
-Defaults are US, English, desktop, subdomains included and a maximum depth of
+Defaults are AU, English, desktop, subdomains included and a maximum depth of
 100. SerpApi chooses the location unless you supply one. For comparable checks,
 use the same city, country, language and device each time. Give a precise
 location such as `Melbourne, Victoria, Australia`.
+
+Questions are grouped into search terms, search settings and output, with
+defaults in brackets and hints beneath each question. The country question links
+to [SerpApi's supported country codes](https://serpapi.com/google-countries).
+
+Text results show the rank and matched URL first, followed by aligned search,
+coverage and timing details. Headings and outcomes use colour in terminals.
+Redirected output stays plain text. Set `NO_COLOR=1` to disable terminal colours.
 
 ## Options
 
@@ -33,7 +41,7 @@ so a URL path does not restrict the check to that page.
 
 | Option | What it controls | Default |
 | --- | --- | --- |
-| `--country` | Two-letter search country code, such as `AU` or `US` | `us` |
+| `--country` | Two-letter [search country code](https://serpapi.com/google-countries), such as `AU` or `US` | `au` |
 | `--location` | Search origin, preferably a city and region | Provider-selected |
 | `--language` | Interface language, such as `en` or `en-gb` | `en` |
 | `--device` | `desktop`, `mobile` or `tablet` | `desktop` |
@@ -160,5 +168,6 @@ billing rules.
 | --- | --- |
 | [`core.py`](../rank_finder/core.py) | Search settings, hostname matching and ranking |
 | [`serpapi.py`](../rank_finder/serpapi.py) | HTTP requests and response parsing |
-| [`cli.py`](../rank_finder/cli.py) | Arguments, guided setup and terminal output |
+| [`cli.py`](../rank_finder/cli.py) | Arguments and guided setup |
+| [`terminal.py`](../rank_finder/terminal.py) | Terminal styles and result formatting |
 | [`history.py`](../rank_finder/history.py) | Optional SQLite persistence |

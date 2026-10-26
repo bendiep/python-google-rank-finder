@@ -32,9 +32,12 @@ class CliTests(unittest.TestCase):
     def test_existing_positional_usage_still_works(self):
         code, stdout, _, session = self.run_cli(["example.com", "example keyword"])
         self.assertEqual(code, 0)
-        self.assertIn("Position: 2", stdout)
-        self.assertIn("Country: US | Language: en | Device: desktop", stdout)
-        self.assertIn("Location used: Melbourne,Victoria,Australia", stdout)
+        self.assertIn("#2  Match found", stdout)
+        self.assertRegex(stdout, r"Country\s+AU")
+        self.assertRegex(stdout, r"Language\s+en")
+        self.assertRegex(stdout, r"Device\s+Desktop")
+        self.assertIn("Melbourne, Victoria, Australia", stdout)
+        self.assertEqual(session.get.call_args.kwargs["params"]["gl"], "au")
         session.close.assert_called_once()
 
     def test_json_output_is_only_json_and_has_search_context(self):
@@ -134,9 +137,12 @@ class CliTests(unittest.TestCase):
             patch("builtins.input", side_effect=["example.com", "example keyword", *([""] * 9)]),
             patch("getpass.getpass") as getpass,
         ):
-            code, stdout, stderr, _ = self.run_cli([])
+            code, stdout, stderr, session = self.run_cli([])
         self.assertEqual(code, 0)
-        self.assertIn("Position: 2", stdout)
+        self.assertIn("#2  Match found", stdout)
+        self.assertIn("[AU]", stderr)
+        self.assertIn("https://serpapi.com/google-countries", stderr)
+        self.assertEqual(session.get.call_args.kwargs["params"]["gl"], "au")
         self.assertIn("including retries", stderr)
         getpass.assert_not_called()
 

@@ -43,8 +43,10 @@ python google-rank-finder.py example.com "example keyword"
 
 You can also use `python -m rank_finder` in place of `python google-rank-finder.py`.
 
-By default, a check uses US, English, desktop and a maximum depth of 100 organic
+By default, a check uses AU, English, desktop and a maximum depth of 100 organic
 positions. It includes subdomains and lets SerpApi choose the location.
+Use `--country` to change the country. See
+[SerpApi's country codes](https://serpapi.com/google-countries) for supported values.
 
 ## Examples
 
@@ -89,15 +91,26 @@ A successful check shows the highest matching organic position and URL. For
 example, the beginning of the output might look like this:
 
 ```text
-Google organic position via SerpApi
-Position: 2 | Page fetched: 1 | URL: https://www.example.com/about
-Keyword: "example keyword" | Domain: example.com
-Country: AU | Language: en | Device: mobile
-Requested location: Melbourne, Victoria, Australia
+  Google rank finder
+  Organic Google results / SerpApi
+  ----------------------------------------------------------------
+
+  #2  Match found
+  https://www.example.com/about
+
+  Search
+    Website           example.com
+    Keyword           example keyword
+    Country           AU
+    Language          en
+    Device            Mobile
+    Location          Melbourne, Victoria, Australia
 ```
 
-The remaining lines report the results and pages checked, deepest position
-examined, HTTP requests, stop reason and retrieval time.
+The coverage and timing sections report the results and pages checked, deepest
+position examined, HTTP requests, stop reason and retrieval time. Terminal
+colours highlight headings and the outcome. Redirected text has no colour codes;
+set `NO_COLOR=1` to disable colours in a terminal too. JSON keeps its existing format.
 
 | Status | Meaning | Exit code |
 | --- | --- | --- |
